@@ -1,0 +1,63 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// Note that some adapters may set a maximum length for the String type by default, please ensure your strings are long
+// enough when changing adapters.
+// See https://www.prisma.io/docs/orm/reference/prisma-schema-reference#string for more information
+datasource db {
+  provider = "sqlite"
+  url      = "file:dev.sqlite"
+}
+
+model Session {
+  id            String    @id
+  shop          String
+  state         String
+  isOnline      Boolean   @default(false)
+  scope         String?
+  expires       DateTime?
+  accessToken   String
+  userId        BigInt?
+  firstName     String?
+  lastName      String?
+  email         String?
+  accountOwner  Boolean   @default(false)
+  locale        String?
+  collaborator  Boolean?  @default(false)
+  emailVerified Boolean?  @default(false)
+  refreshToken        String?
+  refreshTokenExpires DateTime?
+}
+
+model LayawaySale {
+  id                  Int                  @id @default(autoincrement())
+  shop                String
+  orderNumber         String
+  customerName        String
+  orderReference      String?
+  initialDate         DateTime
+  totalCents          Int
+  downPaymentCents    Int                  @default(0)
+  allowedInstallments Int
+  createdAt           DateTime             @default(now())
+  installments        LayawayInstallment[]
+
+  @@index([shop, initialDate])
+  @@unique([shop, orderNumber])
+}
+
+model LayawayInstallment {
+  id         Int         @id @default(autoincrement())
+  saleId     Int
+  amountCents Int
+  paidAt     DateTime
+  note       String?
+  createdAt  DateTime    @default(now())
+  sale       LayawaySale @relation(fields: [saleId], references: [id], onDelete: Cascade)
+
+  @@index([saleId, paidAt])
+}
