@@ -126,7 +126,10 @@ export default function Index() {
             {orderFetcher.data?.error && <s-banner tone="critical">{orderFetcher.data.error}</s-banner>}
             <s-text-field label="Customer" name="customerName" value={customerName} disabled />
             <s-text-field label="Internal reference (optional)" name="orderReference" />
-            <s-text-field label="Initial date" name="initialDate" type="date" value={today} required />
+            <label>
+              <s-text>Initial date</s-text>
+              <input name="initialDate" type="date" defaultValue={today} required />
+            </label>
             <s-text-field label="Total sale amount" name="total" type="number" value={total} disabled />
             <s-text-field label="Down payment" name="downPayment" type="number" min="0" step="0.01" value="0" required />
             <s-text-field label="Allowed installments" name="allowedInstallments" type="number" min="1" step="1" required />
@@ -160,7 +163,10 @@ export default function Index() {
                       <input type="hidden" name="saleId" value={sale.id} />
                       <s-stack direction="inline" gap="base">
                         <s-text-field label="Payment amount" name="amount" type="number" min="0.01" max={(sale.remainingCents / 100).toFixed(2)} step="0.01" required />
-                        <s-text-field label="Payment date" name="paidAt" type="date" value={today} required />
+                        <label>
+                          <s-text>Payment date</s-text>
+                          <input name="paidAt" type="date" defaultValue={today} required />
+                        </label>
                         <s-text-field label="Note (optional)" name="note" />
                         <s-button type="submit">Record payment</s-button>
                       </s-stack>

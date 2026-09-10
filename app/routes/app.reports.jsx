@@ -9,37 +9,84 @@ export const loader = async ({ request }) => {
   const url = new URL(request.url);
   const start = parseDate(url.searchParams.get("start"));
   const end = parseDate(url.searchParams.get("end"), true);
-  const sales = await db.layawaySale.findMany({
+  const outstandingStart = parseDate(url.searchParams.get("outstandingStart"));
+  const outstandingEnd = parseDate(url.searchParams.get("outstandingEnd"), true);
+  const outstandingOrderNumber = String(url.searchParams.get("outstandingOrderNumber") || "").trim();
+  const outstandingCustomerName = String(url.searchParams.get("outstandingCustomerName") || "").trim();
+  const [completedSales, outstandingSales] = await Promise.all([
+    db.layawaySale.findMany({
     where: {
       shop: session.shop,
       ...(start || end ? { initialDate: { ...(start ? { gte: start } : {}), ...(end ? { lte: end } : {}) } } : {}),
     },
     include: { installments: { orderBy: { paidAt: "asc" } } },
     orderBy: { initialDate: "desc" },
-  });
-  const serialized = sales.map(serializeSale);
+    }),
+    db.layawaySale.findMany({
+      where: {
+        shop: session.shop,
+        ...(outstandingOrderNumber ? { orderNumber: { contains: outstandingOrderNumber } } : {}),
+        ...(outstandingCustomerName ? { customerName: { contains: outstandingCustomerName } } : {}),
+        ...(outstandingStart || outstandingEnd ? { initialDate: { ...(outstandingStart ? { gte: outstandingStart } : {}), ...(outstandingEnd ? { lte: outstandingEnd } : {}) } } : {}),
+      },
+      include: { installments: { orderBy: { paidAt: "asc" } } },
+      orderBy: { initialDate: "desc" },
+    }),
+  ]);
+  const completed = completedSales.map(serializeSale);
+  const outstanding = outstandingSales.map(serializeSale);
   return {
     start: url.searchParams.get("start") || "",
     end: url.searchParams.get("end") || "",
-    outstanding: serialized.filter((sale) => sale.remainingCents > 0),
-    completed: serialized.filter((sale) => sale.remainingCents === 0),
+    outstandingStart: url.searchParams.get("outstandingStart") || "",
+    outstandingEnd: url.searchParams.get("outstandingEnd") || "",
+    outstandingOrderNumber,
+    outstandingCustomerName,
+    outstanding: outstanding.filter((sale) => sale.remainingCents > 0),
+    completed: completed.filter((sale) => sale.remainingCents === 0),
   };
 };
 
 export default function Reports() {
-  const { start, end, outstanding, completed } = useLoaderData();
+  const { start, end, outstandingStart, outstandingEnd, outstandingOrderNumber, outstandingCustomerName, outstanding, completed } = useLoaderData();
   return (
     <s-page heading="Layaway reports">
+      <s-section heading="Find outstanding layaway transactions">
+        <Form method="get">
+          <s-stack direction="block" gap="base">
+            <s-text-field label="Shopify order number" name="outstandingOrderNumber" value={outstandingOrderNumber} placeholder="#1001" />
+            <s-text-field label="Customer name" name="outstandingCustomerName" value={outstandingCustomerName} />
+            <s-stack direction="inline" gap="base">
+              <label>
+                <s-text>Initial date from</s-text>
+                <input name="outstandingStart" type="date" defaultValue={outstandingStart} />
+              </label>
+              <label>
+                <s-text>Initial date to</s-text>
+                <input name="outstandingEnd" type="date" defaultValue={outstandingEnd} />
+              </label>
+              <s-button type="submit" variant="primary">Search outstanding</s-button>
+              <s-button href="/app/reports">Clear</s-button>
+            </s-stack>
+          </s-stack>
+        </Form>
+      </s-section>
       <s-section heading="Completed transaction range">
         <Form method="get">
           <s-stack direction="inline" gap="base">
-            <s-text-field label="From" name="start" type="date" value={start} />
-            <s-text-field label="To" name="end" type="date" value={end} />
+            <label>
+              <s-text>From</s-text>
+              <input name="start" type="date" defaultValue={start} />
+            </label>
+            <label>
+              <s-text>To</s-text>
+              <input name="end" type="date" defaultValue={end} />
+            </label>
             <s-button type="submit" variant="primary">Run report</s-button>
           </s-stack>
         </Form>
       </s-section>
-      <ReportSection heading="Outstanding layaway transactions" sales={outstanding} emptyMessage="No outstanding layaway transactions in this range." />
+      <ReportSection heading="Outstanding layaway transactions" sales={outstanding} emptyMessage="No outstanding layaway transactions match this search." />
       <ReportSection heading="Completed layaway transactions" sales={completed} emptyMessage="No completed layaway transactions in this range." />
     </s-page>
   );
