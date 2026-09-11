@@ -37,11 +37,10 @@ export const action = async ({ request }) => {
       return { error: "Shopify could not validate that order. Reauthorize the app and try again." };
     }
     const downPaymentCents = toCents(formData.get("downPayment"));
-    const allowedInstallments = Number(formData.get("allowedInstallments"));
     const initialDate = new Date(`${formData.get("initialDate")}T12:00:00`);
 
-    if (!order || downPaymentCents === null || !Number.isInteger(allowedInstallments) || allowedInstallments < 1 || Number.isNaN(initialDate.getTime())) {
-      return { error: "Enter a valid Shopify order number, date, down payment, and at least one allowed installment." };
+    if (!order || downPaymentCents === null || Number.isNaN(initialDate.getTime())) {
+      return { error: "Enter a valid Shopify order number, date, and down payment." };
     }
     if (downPaymentCents < 0 || downPaymentCents > order.totalCents) {
       return { error: "The total must be positive and the down payment cannot exceed it." };
@@ -56,7 +55,6 @@ export const action = async ({ request }) => {
         initialDate,
         totalCents: order.totalCents,
         downPaymentCents,
-        allowedInstallments,
       },
     });
     return { success: "Layaway sale created." };
@@ -132,7 +130,6 @@ export default function Index() {
             </label>
             <s-text-field label="Total sale amount" name="total" type="number" value={total} disabled />
             <s-text-field label="Down payment" name="downPayment" type="number" min="0" step="0.01" value="0" required />
-            <s-text-field label="Allowed installments" name="allowedInstallments" type="number" min="1" step="1" required />
             <s-button type="submit" variant="primary">Create layaway sale</s-button>
           </s-stack>
         </Form>
@@ -147,7 +144,7 @@ export default function Index() {
                 <s-stack direction="block" gap="base">
                   <s-heading>{sale.orderNumber} - {sale.customerName}</s-heading>
                   <s-paragraph>
-                    Started {sale.initialDate} | Total {formatMoney(sale.totalCents)} | Down payment {formatMoney(sale.downPaymentCents)} | {sale.installments.length}/{sale.allowedInstallments} installments | Remaining {formatMoney(sale.remainingCents)}
+                    Started {sale.initialDate} | Total {formatMoney(sale.totalCents)} | Down payment {formatMoney(sale.downPaymentCents)} | {sale.installments.length} installments recorded | Remaining {formatMoney(sale.remainingCents)}
                   </s-paragraph>
                   {sale.orderReference && <s-paragraph>Reference: {sale.orderReference}</s-paragraph>}
                   {sale.installments.length > 0 && (

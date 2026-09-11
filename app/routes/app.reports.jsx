@@ -147,7 +147,7 @@ function ReportSection({ heading, sales, emptyMessage, view, downloadParams }) {
           {sales.map((sale) => (
             <s-box key={sale.id} padding="base" borderWidth="base" borderRadius="base">
               <s-heading>{sale.orderNumber} - {sale.customerName}</s-heading>
-              <s-paragraph>Started {sale.initialDate} | Total {formatMoney(sale.totalCents)} | Down payment {formatMoney(sale.downPaymentCents)} | Allowed installments {sale.allowedInstallments} | Recorded installments {sale.installments.length} | Remaining {formatMoney(sale.remainingCents)}</s-paragraph>
+              <s-paragraph>Started {sale.initialDate} | Total {formatMoney(sale.totalCents)} | Down payment {formatMoney(sale.downPaymentCents)} | Recorded installments {sale.installments.length} | Remaining {formatMoney(sale.remainingCents)}</s-paragraph>
               {sale.orderReference && <s-paragraph>Internal reference: {sale.orderReference}</s-paragraph>}
               {sale.installments.length > 0 && <s-unordered-list>{sale.installments.map((payment) => <s-list-item key={payment.id}>{payment.paidAt}: {formatMoney(payment.amountCents)}{payment.note ? ` - ${payment.note}` : ""}</s-list-item>)}</s-unordered-list>}
             </s-box>
@@ -186,13 +186,13 @@ function ReportTable({ sales }) {
     <table>
       <thead>
         <tr>
-          <th>Order</th><th>Customer</th><th>Initial date</th><th>Total</th><th>Down payment</th><th>Allowed installments</th><th>Recorded installments</th><th>Remaining</th><th>Internal reference</th>
+          <th>Order</th><th>Customer</th><th>Initial date</th><th>Total</th><th>Down payment</th><th>Recorded installments</th><th>Remaining</th><th>Internal reference</th>
         </tr>
       </thead>
       <tbody>
         {sales.map((sale) => (
           <tr key={sale.id}>
-            <td>{sale.orderNumber}</td><td>{sale.customerName}</td><td>{sale.initialDate}</td><td>{formatMoney(sale.totalCents)}</td><td>{formatMoney(sale.downPaymentCents)}</td><td>{sale.allowedInstallments}</td><td>{sale.installments.length}</td><td>{formatMoney(sale.remainingCents)}</td><td>{sale.orderReference || ""}</td>
+            <td>{sale.orderNumber}</td><td>{sale.customerName}</td><td>{sale.initialDate}</td><td>{formatMoney(sale.totalCents)}</td><td>{formatMoney(sale.downPaymentCents)}</td><td>{sale.installments.length}</td><td>{formatMoney(sale.remainingCents)}</td><td>{sale.orderReference || ""}</td>
           </tr>
         ))}
       </tbody>
@@ -226,13 +226,13 @@ function reportUrl(params) {
 function toCsv(sales) {
   const highestInstallmentCount = Math.max(0, ...sales.map((sale) => sale.installments.length));
   const installmentHeaders = Array.from({ length: highestInstallmentCount }, (_, index) => [`Installment ${index + 1}`, `Installment ${index + 1} amount`]).flat();
-  const headers = ["Shopify order number", "Customer", "Initial date", "Total sale amount", "Down payment", "Allowed installments", "Recorded installments", "Remaining balance", "Internal reference", ...installmentHeaders];
+  const headers = ["Shopify order number", "Customer", "Initial date", "Total sale amount", "Down payment", "Recorded installments", "Remaining balance", "Internal reference", ...installmentHeaders];
   const rows = sales.map((sale) => {
     const installments = Array.from({ length: highestInstallmentCount }, (_, index) => {
       const payment = sale.installments[index];
       return payment ? [payment.paidAt, (payment.amountCents / 100).toFixed(2)] : ["", ""];
     }).flat();
-    return [sale.orderNumber, sale.customerName, sale.initialDate, (sale.totalCents / 100).toFixed(2), (sale.downPaymentCents / 100).toFixed(2), sale.allowedInstallments, sale.installments.length, (sale.remainingCents / 100).toFixed(2), sale.orderReference || "", ...installments];
+    return [sale.orderNumber, sale.customerName, sale.initialDate, (sale.totalCents / 100).toFixed(2), (sale.downPaymentCents / 100).toFixed(2), sale.installments.length, (sale.remainingCents / 100).toFixed(2), sale.orderReference || "", ...installments];
   });
   return [headers, ...rows].map((row) => row.map(escapeCsv).join(",")).join("\r\n");
 }

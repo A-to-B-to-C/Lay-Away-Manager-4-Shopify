@@ -42,7 +42,6 @@ model LayawaySale {
   initialDate         DateTime
   totalCents          Int
   downPaymentCents    Int                  @default(0)
-  allowedInstallments Int
   createdAt           DateTime             @default(now())
   installments        LayawayInstallment[]
 
